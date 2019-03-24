@@ -6,6 +6,7 @@ VOLUME [ "/var/lib/tftpboot/share/extra", "/var/lib/tftpboot/pxelinux.cfg/extra"
 
 # Install the necessary packages
 RUN apk add --update \
+  darkhttpd \
   dnsmasq \
   wget \
   && rm -rf /var/cache/apk/*
@@ -18,10 +19,12 @@ RUN \
   && wget -q https://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-"$SYSLINUX_VERSION".tar.gz \
   && tar -xzf syslinux-"$SYSLINUX_VERSION".tar.gz \
   && mkdir -p /var/lib/tftpboot/share/extra \
+  && cp "$TEMP_SYSLINUX_PATH"/bios/core/lpxelinux.0 /var/lib/tftpboot/ \
   && cp "$TEMP_SYSLINUX_PATH"/bios/core/pxelinux.0 /var/lib/tftpboot/ \
   && cp "$TEMP_SYSLINUX_PATH"/bios/com32/libutil/libutil.c32 /var/lib/tftpboot/ \
   && cp "$TEMP_SYSLINUX_PATH"/bios/com32/elflink/ldlinux/ldlinux.c32 /var/lib/tftpboot/ \
   && cp "$TEMP_SYSLINUX_PATH"/bios/com32/menu/menu.c32 /var/lib/tftpboot/ \
+  && cp "$TEMP_SYSLINUX_PATH"/bios/memdisk/memdisk /var/lib/tftpboot/share/ \
   && rm -rf "$TEMP_SYSLINUX_PATH" \
   && rm /tmp/syslinux-"$SYSLINUX_VERSION".tar.gz
 
@@ -40,5 +43,5 @@ COPY etc/ /etc
 
 # Start dnsmasq. It picks up default configuration from /etc/dnsmasq.conf and
 # /etc/default/dnsmasq plus any command line switch
-ENTRYPOINT ["dnsmasq", "--no-daemon"]
+ENTRYPOINT ["dnsmasq", "--keep-in-foreground", "--log-facility=-"]
 CMD ["--dhcp-range=192.168.56.2,proxy"]
